@@ -22,11 +22,11 @@ STATIC_PATH = os.path.join(BASE_DIR,'static')
 SECRET_KEY = '5^j(y6ji*g%8@x)yh27ufx+jjrgs5gv!l6sx4mw+#!*r3ju*5p'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['2064251j.pythonanywhere.com']
 
 
 # Application definition
