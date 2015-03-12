@@ -1,10 +1,9 @@
 from django.shortcuts import render, redirect
-from rango.models import Category, Page
-from rango.forms import CategoryForm, PageForm
+from rango.models import Category, Page, User, UserProfile
+from rango.forms import CategoryForm, PageForm, UserProfileForm
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
 from rango.bing_search import run_query
-
 
 @login_required
 def restricted(request):
@@ -45,9 +44,7 @@ def about(request):
 
 
 def category(request, category_name_slug):
-    context_dict = {}
-    context_dict['result_list'] = None
-    context_dict['query'] = None
+    context_dict = {'result_list': None, 'query': None}
 
     if request.method == 'POST':
         query = request.POST['query'].strip()
@@ -70,7 +67,6 @@ def category(request, category_name_slug):
 
     return render(request, 'rango/category.html', context_dict)
 
-
 @login_required
 def add_category(request):
     if request.method == 'POST':
@@ -90,7 +86,7 @@ def add_page(request, category_name_slug):
     try:
         cat = Category.objects.get(slug=category_name_slug)
     except Category.DoesNotExist:
-                cat = None
+        cat = None
     if request.method == 'POST':
         form = PageForm(request.POST)
         if form.is_valid():
@@ -99,16 +95,14 @@ def add_page(request, category_name_slug):
                 page.category = cat
                 page.views = 0
                 page.save()
-                return category(request, category_name_slug)
+                #return category(request, category_name_slug)
+                return redirect('../')
         else:
             print form.errors
     else:
         form = PageForm()
-
     context_dict = {'form':form, 'category': cat}
-
     return render(request, 'rango/add_page.html', context_dict)
-
 
 def search(request):
     result_list = []
@@ -136,6 +130,59 @@ def track_url(request):
 
 @login_required
 def register_profile(request):
-    context_dict = {}
-    # Not yet implemented...
-    return render(request, 'profile_registration.html', context_dict)
+    if request.method == 'POST':
+        profile_form = UserProfileForm(data=request.POST)
+        if profile_form.is_valid():
+            profile = profile_form.save(commit=False)
+            profile.user = User.objects.get(id=request.user.id)
+            if 'picture' in request.FILES:
+                try:
+                    profile.picture = request.FILES['picture']
+                except:
+                    pass
+            profile.save()
+            return redirect('../')
+    else:
+        profile_form = UserProfileForm()
+    return render(request, 'rango/profile_registration.html', {'profile_form': profile_form})
+
+@login_required
+def profile(request, user_id = None):
+    if user_id is not None:
+        context_dict = {'user': User.objects.get(id=user_id)}
+    else:
+        context_dict = {'user': User.objects.get(id=request.user.id)}
+    try:
+        context_dict['profile'] = UserProfile.objects.get(user=context_dict['user'])
+    except:
+        context_dict['profile'] = None
+    context_dict['myprofile'] = user_id is None or user_id == request.user.id
+    return render(request, 'rango/profile.html', context_dict)
+
+@login_required
+def edit_profile(request):
+    try:
+        profile = UserProfile.objects.get(user=request.user)
+    except:
+        profile = None
+    if request.method == 'POST':
+        profile_form = UserProfileForm(data=request.POST, instance=profile)
+        if profile_form.is_valid():
+            profile_updated = profile_form.save(commit=False)
+            if profile is None:
+                profile_updated.user = User.objects.get(id=request.user.id)
+            if 'picture' in request.FILES:
+                try:
+                    profile_updated.picture = request.FILES['picture']
+                except:
+                    pass
+            profile_updated.save()
+            return redirect('../profile')
+    else:
+        form = UserProfileForm(instance=profile)
+        return render(request, 'rango/profile_edit.html', {'profile_form': form})
+
+@login_required
+def user_list(request):
+    users = User.objects.all()
+    return render(request, 'rango/user_list.html', {'users': users})

@@ -6,7 +6,7 @@ from registration.backends.simple.views import RegistrationView
 # Create a new class that redirects the user to the index page, if successful at logging
 class MyRegistrationView(RegistrationView):
     def get_success_url(self,request, user):
-        return '/rango/'
+        return '/rango/add_profile/'
 
 
 urlpatterns = patterns('',
@@ -16,6 +16,9 @@ urlpatterns = patterns('',
     url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
     (r'^accounts/', include('registration.backends.simple.urls')),
 )
+
+handler404 = 'rango.views.bad_url'
+handler500 = 'rango.views.bad_url'
 
 if settings.DEBUG:
     urlpatterns += patterns(
